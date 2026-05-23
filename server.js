@@ -47,6 +47,7 @@ const io         = new SocketIO(httpServer, {
       'https://moon-ai-rust.vercel.app',
       'https://moon-ai.info',
       'https://www.zylapse.in',
+      'https://moonai.zylapse.com',
       'http://localhost:5173',
       'http://localhost:5174'
     ],
@@ -89,6 +90,7 @@ app.use(cors({
     'https://moon-ai-rust.vercel.app',
     'https://moon-ai.info',
     'https://www.zylapse.in',
+    'https://moonai.zylapse.com',
     'http://localhost:5173',
     'http://localhost:5174'
   ],
