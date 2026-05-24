@@ -238,6 +238,7 @@ router.post('/save-chat', async (req, res) => {
       // Overwrite entirely to ensure edits and streaming updates are saved
       chat.messages = cleanMessages;
       if (folder) chat.folder = folder;
+      chat.updatedAt = new Date(); // Force updatedAt refresh
       await chat.save();
     }
 
@@ -412,6 +413,7 @@ router.post('/chat/edit-message', async (req, res) => {
 
     // ── Append AI reply to chat ───────────────────────────────────────────────
     chat.messages.push({ role: 'assistant', content: reply });
+    chat.updatedAt = new Date(); // Force updatedAt refresh
     await chat.save();
 
     console.log(`✏️ Message edited at index ${idx} for chat "${title}" (${username})`);
@@ -469,6 +471,7 @@ router.post('/chat/regenerate', async (req, res) => {
 
     // ── Append new reply ──────────────────────────────────────────────────────
     chat.messages.push({ role: 'assistant', content: reply });
+    chat.updatedAt = new Date(); // Force updatedAt refresh
     await chat.save();
 
     console.log(`🔄 Regenerated reply for chat "${title}" (${username})`);
@@ -515,6 +518,7 @@ router.post('/chat/feedback', async (req, res) => {
     }
 
     chat.messages[idx].feedback = feedback;
+    chat.updatedAt = new Date(); // Force updatedAt refresh
     await chat.save();
 
     console.log(`👍 Feedback "${feedback}" recorded at index ${idx} for chat "${chat.title}" (${username})`);
