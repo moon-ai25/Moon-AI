@@ -92,6 +92,7 @@ app.use(cors({
     'https://moon-ai.info',
     'https://www.zylapse.in',
     'https://moonai.zylapse.com',
+    'https://moonai.phynex.in',
     'http://localhost:5173',
     'http://localhost:5174'
   ],
