@@ -8,10 +8,10 @@ require('dotenv').config();
 // ─── Model Pool ───────────────────────────────────────────────────────────────
 
 const MODEL_POOL = [
-  'llama-3.3-70b-versatile',           // Primary — reliable & fast
-  'llama-3.1-8b-instant',              // Fallback 1 — lightweight
-  'mixtral-8x7b-32768',                // Fallback 2
-  'gemma2-9b-it'                       // Fallback 3
+  'openai/gpt-oss-120b',               // Primary — reliable & fast
+  'qwen/qwen3.8-27b',                  // Fallback 1 — lightweight
+  'groq/compound',                     // Fallback 2
+  'openai/gpt-oss-20b'                 // Fallback 3
 ];
 
 const TIMEOUT_MS         = 15000; // 15 seconds per model attempt
