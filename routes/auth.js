@@ -252,4 +252,47 @@ router.post('/forgot-password/reset', async (req, res) => {
   }
 });
 
+// ── Delete Account ────────────────────────────────────────────────────────────
+// POST /api/delete-account
+// Body: { username, password? }  (password required for manual accounts)
+router.post('/delete-account', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: 'username is required' });
+  }
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // For manually registered accounts, require password confirmation
+    if (user.loginType === 'manual') {
+      if (!password) {
+        return res.status(400).json({ error: 'Password is required to delete a manual account' });
+      }
+      const bcrypt = require('bcryptjs');
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        return res.status(401).json({ error: 'Incorrect password' });
+      }
+    }
+
+    // Delete all chats belonging to the user
+    const Chat = require('../models/Chat');
+    await Chat.deleteMany({ username });
+
+    // Delete the user
+    await User.deleteOne({ username });
+
+    console.log(`🗑️ Account deleted: ${username}`);
+    res.json({ message: 'Account and all data deleted successfully.' });
+  } catch (err) {
+    console.error('delete-account error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
