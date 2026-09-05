@@ -305,14 +305,29 @@ router.get('/chat/:username/:id', async (req, res) => {
 // ─── POST /api/delete-chat ───────────────────────────────────────────────────
 
 router.post('/delete-chat', async (req, res) => {
-  const { username, title } = req.body;
-  if (!username || !title) {
-    return res.status(400).json({ error: 'username and title are required' });
+  const { username, title, chatId } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: 'username is required' });
+  }
+  if (!title && !chatId) {
+    return res.status(400).json({ error: 'title or chatId is required' });
   }
 
   try {
-    await Chat.findOneAndDelete({ username, title });
-    await User.findOneAndUpdate({ username }, { $pull: { folders: title } });
+    let chat;
+    if (chatId) {
+      chat = await Chat.findOneAndDelete({ _id: chatId, username });
+    }
+    if (!chat && title) {
+      chat = await Chat.findOneAndDelete({ username, title });
+    }
+
+    if (chat) {
+      await User.findOneAndUpdate({ username }, { $pull: { folders: chat.title } });
+    } else if (title) {
+      await User.findOneAndUpdate({ username }, { $pull: { folders: title } });
+    }
+    
     res.json({ message: 'Chat deleted successfully' });
   } catch (err) {
     console.error('❌ delete-chat error:', err.message);
@@ -323,10 +338,17 @@ router.post('/delete-chat', async (req, res) => {
 // ─── POST /api/delete-chat-by-title (alias) ──────────────────────────────────
 
 router.post('/delete-chat-by-title', async (req, res) => {
-  const { username, title } = req.body;
+  const { username, title, chatId } = req.body;
   try {
-    await Chat.deleteMany({ username, title });
-    await User.findOneAndUpdate({ username }, { $pull: { folders: title } });
+    if (chatId) {
+      const chat = await Chat.findOneAndDelete({ _id: chatId, username });
+      if (chat) {
+        await User.findOneAndUpdate({ username }, { $pull: { folders: chat.title } });
+      }
+    } else {
+      await Chat.deleteMany({ username, title });
+      await User.findOneAndUpdate({ username }, { $pull: { folders: title } });
+    }
     res.json({ message: 'Deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Delete failed' });
@@ -336,9 +358,9 @@ router.post('/delete-chat-by-title', async (req, res) => {
 // ─── POST /api/rename-chat ───────────────────────────────────────────────────
 
 router.post('/rename-chat', async (req, res) => {
-  const { username, oldTitle, newTitle } = req.body;
-  if (!username || !oldTitle || !newTitle) {
-    return res.status(400).json({ error: 'username, oldTitle, and newTitle are required' });
+  const { username, oldTitle, newTitle, chatId } = req.body;
+  if (!username || !newTitle) {
+    return res.status(400).json({ error: 'username and newTitle are required' });
   }
 
   try {
@@ -347,18 +369,30 @@ router.post('/rename-chat', async (req, res) => {
       return res.status(400).json({ error: 'A chat with this title already exists' });
     }
 
-    const updated = await Chat.findOneAndUpdate(
-      { username, title: oldTitle },
-      { $set: { title: newTitle } },
-      { new: true }
-    );
+    let updated;
+    if (chatId) {
+      updated = await Chat.findOneAndUpdate(
+        { _id: chatId, username },
+        { $set: { title: newTitle } },
+        { new: true }
+      );
+    } else if (oldTitle) {
+      updated = await Chat.findOneAndUpdate(
+        { username, title: oldTitle },
+        { $set: { title: newTitle } },
+        { new: true }
+      );
+    }
 
     if (!updated) {
       return res.status(404).json({ error: 'Chat not found' });
     }
 
     // Update user folders list
-    await User.updateOne({ username }, { $pull:    { folders: oldTitle } });
+    const titleToRemove = oldTitle || updated.title;
+    if (titleToRemove) {
+      await User.updateOne({ username }, { $pull:    { folders: titleToRemove } });
+    }
     await User.updateOne({ username }, { $addToSet: { folders: newTitle } });
 
     res.json({ message: 'Chat renamed successfully' });
