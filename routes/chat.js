@@ -381,14 +381,17 @@ router.post('/rename-chat', async (req, res) => {
  * Response: { reply, updatedMessages }
  */
 router.post('/chat/edit-message', async (req, res) => {
-  const { username, title, msgIndex, newContent } = req.body;
+  const { username, title, msgIndex, newContent, chatId } = req.body;
 
   if (!username || !title || msgIndex === undefined || !newContent) {
     return res.status(400).json({ error: 'username, title, msgIndex, and newContent are required' });
   }
 
   try {
-    const chat = await Chat.findOne({ username, title });
+    let chat;
+    if (chatId) chat = await Chat.findOne({ _id: chatId, username });
+    if (!chat) chat = await Chat.findOne({ username, title });
+    
     if (!chat) return res.status(404).json({ error: 'Chat not found' });
 
     const idx = parseInt(msgIndex, 10);
@@ -438,14 +441,17 @@ router.post('/chat/edit-message', async (req, res) => {
  * Response: { reply, updatedMessages }
  */
 router.post('/chat/regenerate', async (req, res) => {
-  const { username, title } = req.body;
+  const { username, title, chatId } = req.body;
 
   if (!username || !title) {
     return res.status(400).json({ error: 'username and title are required' });
   }
 
   try {
-    const chat = await Chat.findOne({ username, title });
+    let chat;
+    if (chatId) chat = await Chat.findOne({ _id: chatId, username });
+    if (!chat) chat = await Chat.findOne({ username, title });
+    
     if (!chat) return res.status(404).json({ error: 'Chat not found' });
 
     if (chat.messages.length === 0) {
